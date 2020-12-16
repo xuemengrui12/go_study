@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+message GrpcResponse {
+    int32 Result = 1;
+    string Error = 2;
+}
+
+message GrpcRequest {
+    string RequestType=1;
+    int32 A = 2;
+    int32 B = 3;
+}
+
+service GrpcService {
+    rpc Add(GrpcRequest) returns (GrpcResponse) {}
+
+    rpc	Subtract(GrpcRequest) returns (GrpcResponse) {}
+
+    rpc	Multiply(GrpcRequest) returns (GrpcResponse) {}
+
+    rpc	Divide(GrpcRequest) returns (GrpcResponse) {}
+}

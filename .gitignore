@@ -1,0 +1,7 @@
+*~
+*.log
+*.exe
+glide.lock
+.idea
+*.iml
+*.xml
