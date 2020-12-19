@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
-	"go_study/gokit/gokit_log/endpoints"
-	"go_study/gokit/gokit_log/services"
+	"go_study/gokit/gokit_jwt/endpoints"
+	"go_study/gokit/gokit_jwt/services"
+	"go_study/gokit/gokit_jwt/utils"
 	"net/http"
 	"strconv"
 )
@@ -42,7 +42,7 @@ func decodeArithmeticRequest(_ context.Context, r *http.Request) (interface{}, e
 	if err != nil {
 		return nil, ErrorBadRequest
 	}
-	return endpoints.ArithmeticRequest{
+	return services.ArithmeticRequest{
 		RequestType: requestType,
 		A:           a,
 		B:           b,
@@ -59,7 +59,7 @@ var (
 	ErrorBadRequest = errors.New("invalid request parameter")
 )
 
-func MakeHttpHandler(ctx context.Context, endpoint endpoint.Endpoint, logger log.Logger) http.Handler {
+func MakeHttpHandler(endpoint endpoints.EndPointServer, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 
 	options := []kithttp.ServerOption{
@@ -73,15 +73,33 @@ func MakeHttpHandler(ctx context.Context, endpoint endpoint.Endpoint, logger log
 			UUID := uuid.NewV5(uuid.Must(uuid.NewV4()), "req_uuid").String()
 			logger.Log("给请求添加uuid", UUID)
 			ctx = context.WithValue(ctx, services.ContextReqUUid, UUID)
+			ctx = context.WithValue(ctx, utils.JWT_CONTEXT_KEY, request.Header.Get("Authorization"))
 			return ctx
 		}),
 	}
 	r.Methods("GET").Path("/calculate/{type}/{a}/{b}").Handler(kithttp.NewServer(
-		endpoint,
+		endpoint.AddEndPoint,
 		decodeArithmeticRequest,
 		encodeArithmeticResponse,
 		options...,
 	))
-
+	r.Handle("/login", kithttp.NewServer(
+		endpoint.LoginEndPoint,
+		decodeHTTPLoginRequest,    //解析请求值
+		encodeHTTPGenericResponse, //返回值
+		options...,
+	))
 	return r
+}
+func decodeHTTPLoginRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var login services.LoginRequest
+	err := json.NewDecoder(r.Body).Decode(&login)
+	if err != nil {
+		return nil, err
+	}
+	return login, nil
+}
+func encodeHTTPGenericResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	return json.NewEncoder(w).Encode(response)
 }

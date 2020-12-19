@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"github.com/go-kit/kit/endpoint"
-	services2 "go_study/gokit/gokit_grpc/services"
-	"go_study/gokit/gokit_http/services"
+	"go_study/gokit/gokit_grpc/services"
 	"strings"
 )
 
 func MakeArithmeticEndpoint(svc services.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*services2.GrpcRequest)
+		req := request.(*services.GrpcRequest)
 
 		var (
 			a, b, res int
@@ -33,8 +32,8 @@ func MakeArithmeticEndpoint(svc services.Service) endpoint.Endpoint {
 			return nil, errors.New("the dividend can not be zero!")
 		}
 		if calError != nil {
-			return &services2.GrpcResponse{Result: int32(res), Error: calError.Error()}, nil
+			return &services.GrpcResponse{Result: int32(res), Error: calError.Error()}, nil
 		}
-		return &services2.GrpcResponse{Result: int32(res), Error: ""}, nil
+		return &services.GrpcResponse{Result: int32(res), Error: ""}, nil
 	}
 }
